@@ -53,56 +53,59 @@ jobs:
           VER="${TAG#v}"
 
           cat > Formula/ocv.rb << 'HEREDOC'
-        # typed: true
-        # frozen_string_literal: true
+          # typed: true
+          # frozen_string_literal: true
 
-        class Ocv < Formula
-          desc "ANSI terminal dashboard and CLI for OpenCode database"
-          homepage "https://github.com/woss/opencode-visualizer"
-          license "MIT"
+          class Ocv < Formula
+            desc "ANSI terminal dashboard and CLI for OpenCode database"
+            homepage "https://github.com/woss/opencode-visualizer"
+            license "MIT"
+            version "${VERSION_NUM}"
 
-          on_macos do
-            on_arm do
-              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-aarch64-macos.tar.gz"
-              sha256 "${SHA_OCV_AARCH64_MACOS_TAR_GZ}"
+            on_macos do
+              on_arm do
+                url "https://github.com/woss/opencode-visualizer/releases/download/${RELEASE_TAG}/ocv-aarch64-macos.tar.gz"
+                sha256 "${SHA_OCV_AARCH64_MACOS_TAR_GZ}"
+              end
+              on_intel do
+                url "https://github.com/woss/opencode-visualizer/releases/download/${RELEASE_TAG}/ocv-x86_64-macos.tar.gz"
+                sha256 "${SHA_OCV_X86_64_MACOS_TAR_GZ}"
+              end
             end
-            on_intel do
-              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-x86_64-macos.tar.gz"
-              sha256 "${SHA_OCV_X86_64_MACOS_TAR_GZ}"
+
+            on_linux do
+              on_arm do
+                url "https://github.com/woss/opencode-visualizer/releases/download/${RELEASE_TAG}/ocv-aarch64-linux.tar.gz"
+                sha256 "${SHA_OCV_AARCH64_LINUX_TAR_GZ}"
+              end
+              on_intel do
+                url "https://github.com/woss/opencode-visualizer/releases/download/${RELEASE_TAG}/ocv-x86_64-linux.tar.gz"
+                sha256 "${SHA_OCV_X86_64_LINUX_TAR_GZ}"
+              end
+            end
+
+            def install
+              bin.install "ocv"
+            end
+
+            test do
+              assert_match "ocv", shell_output("\#{bin}/ocv --version")
+            end
+
+            livecheck do
+              url :stable
+              strategy :github_latest
             end
           end
-
-          on_linux do
-            on_arm do
-              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-aarch64-linux.tar.gz"
-              sha256 "${SHA_OCV_AARCH64_LINUX_TAR_GZ}"
-            end
-            on_intel do
-              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-x86_64-linux.tar.gz"
-              sha256 "${SHA_OCV_X86_64_LINUX_TAR_GZ}"
-            end
-          end
-
-          def install
-            bin.install "ocv"
-          end
-
-          test do
-            assert_match "ocv", shell_output("\#{bin}/ocv --version")
-          end
-
-          livecheck do
-            url :stable
-            strategy :github_latest
-          end
-        end
-        HEREDOC
+          HEREDOC
 
           # Substitute placeholders with actual values
           sed -i "s/\${SHA_OCV_AARCH64_MACOS_TAR_GZ}/${{ steps.checksums.outputs.ocv_aarch64_macos_tar_gz }}/g" Formula/ocv.rb
           sed -i "s/\${SHA_OCV_X86_64_MACOS_TAR_GZ}/${{ steps.checksums.outputs.ocv_x86_64_macos_tar_gz }}/g" Formula/ocv.rb
           sed -i "s/\${SHA_OCV_AARCH64_LINUX_TAR_GZ}/${{ steps.checksums.outputs.ocv_aarch64_linux_tar_gz }}/g" Formula/ocv.rb
           sed -i "s/\${SHA_OCV_X86_64_LINUX_TAR_GZ}/${{ steps.checksums.outputs.ocv_x86_64_linux_tar_gz }}/g" Formula/ocv.rb
+          sed -i "s/\${RELEASE_TAG}/${TAG}/g" Formula/ocv.rb
+          sed -i "s/\${VERSION_NUM}/${VER}/g" Formula/ocv.rb
 
       - name: Commit and push
         run: |
