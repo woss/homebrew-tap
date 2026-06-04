@@ -1,0 +1,118 @@
+name: Update formula
+
+on:
+  schedule:
+    # Run weekly on Monday at 9am UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to update to (e.g. 0.2.0). Leave empty for latest."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get latest release version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "tag=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            TAG=$(curl -sL https://api.github.com/repos/woss/opencode-visualizer/releases/latest | jq -r '.tag_name')
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            echo "Using latest tag: ${TAG}"
+          fi
+
+      - name: Fetch and checksum release assets
+        id: checksums
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          BASE="https://github.com/woss/opencode-visualizer/releases/download/${TAG}"
+
+          for ASSET in ocv-aarch64-macos.tar.gz ocv-x86_64-macos.tar.gz ocv-aarch64-linux.tar.gz ocv-x86_64-linux.tar.gz; do
+            echo "Downloading ${ASSET}..."
+            curl -sL -o "/tmp/${ASSET}" "${BASE}/${ASSET}"
+            SHA=$(sha256sum "/tmp/${ASSET}" | cut -d' ' -f1)
+            # Convert asset name to variable-safe key
+            KEY=$(echo "${ASSET}" | sed 's/\./_/g; s/-/_/g')
+            echo "${KEY}=${SHA}" >> $GITHUB_OUTPUT
+          done
+
+      - name: Update formula with checksums
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          # strip leading v
+          VER="${TAG#v}"
+
+          cat > Formula/ocv.rb << 'HEREDOC'
+        # typed: true
+        # frozen_string_literal: true
+
+        class Ocv < Formula
+          desc "ANSI terminal dashboard and CLI for OpenCode database"
+          homepage "https://github.com/woss/opencode-visualizer"
+          license "MIT"
+
+          on_macos do
+            on_arm do
+              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-aarch64-macos.tar.gz"
+              sha256 "${SHA_OCV_AARCH64_MACOS_TAR_GZ}"
+            end
+            on_intel do
+              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-x86_64-macos.tar.gz"
+              sha256 "${SHA_OCV_X86_64_MACOS_TAR_GZ}"
+            end
+          end
+
+          on_linux do
+            on_arm do
+              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-aarch64-linux.tar.gz"
+              sha256 "${SHA_OCV_AARCH64_LINUX_TAR_GZ}"
+            end
+            on_intel do
+              url "https://github.com/woss/opencode-visualizer/releases/latest/download/ocv-x86_64-linux.tar.gz"
+              sha256 "${SHA_OCV_X86_64_LINUX_TAR_GZ}"
+            end
+          end
+
+          def install
+            bin.install "ocv"
+          end
+
+          test do
+            assert_match "ocv", shell_output("\#{bin}/ocv --version")
+          end
+
+          livecheck do
+            url :stable
+            strategy :github_latest
+          end
+        end
+        HEREDOC
+
+          # Substitute placeholders with actual values
+          sed -i "s/\${SHA_OCV_AARCH64_MACOS_TAR_GZ}/${{ steps.checksums.outputs.ocv_aarch64_macos_tar_gz }}/g" Formula/ocv.rb
+          sed -i "s/\${SHA_OCV_X86_64_MACOS_TAR_GZ}/${{ steps.checksums.outputs.ocv_x86_64_macos_tar_gz }}/g" Formula/ocv.rb
+          sed -i "s/\${SHA_OCV_AARCH64_LINUX_TAR_GZ}/${{ steps.checksums.outputs.ocv_aarch64_linux_tar_gz }}/g" Formula/ocv.rb
+          sed -i "s/\${SHA_OCV_X86_64_LINUX_TAR_GZ}/${{ steps.checksums.outputs.ocv_x86_64_linux_tar_gz }}/g" Formula/ocv.rb
+
+      - name: Commit and push
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/ocv.rb
+          if git diff --cached --quiet; then
+            echo "No changes — formula already up to date"
+          else
+            git commit -m "chore: update ocv to ${TAG}"
+            git push
+          fi
