@@ -5,27 +5,27 @@ class Ocv < Formula
   desc "ANSI terminal dashboard and CLI for OpenCode database"
   homepage "https://github.com/woss/opencode-visualizer"
   license "MIT"
-  version "1.2.0"
+  version "1.3.7"
 
   on_macos do
     on_arm do
-      url "https://github.com/woss/opencode-visualizer/releases/download/v1.2.0/ocv-aarch64-macos.tar.gz"
-      sha256 "7e19877ecb77597a1db70a1b83b3b4b8769706bc092828d771ec3b996cde7b5e"
+      url "https://github.com/woss/opencode-visualizer/releases/download/v1.3.7/ocv-aarch64-macos.tar.gz"
+      sha256 "8a9aa17436f3104b7ffb6c9b88bb79a03b815be5639a5eab4a2cc2dfe6eefa25"
     end
     on_intel do
-      url "https://github.com/woss/opencode-visualizer/releases/download/v1.2.0/ocv-x86_64-macos.tar.gz"
-      sha256 "588d09c28fec5aec09379f2c7cc23efaa6db44c558a8ff544708d8c4abec41cc"
+      url "https://github.com/woss/opencode-visualizer/releases/download/v1.3.7/ocv-x86_64-macos.tar.gz"
+      sha256 "9ccdae5d2fb18d575063f95053b6c39e0201922e56c061c9b6b05dfe430a3054"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/woss/opencode-visualizer/releases/download/v1.2.0/ocv-aarch64-linux.tar.gz"
-      sha256 "ac67b5fb34b709634774b83146e0577a1358abc7581861618290592a6f76fca2"
+      url "https://github.com/woss/opencode-visualizer/releases/download/v1.3.7/ocv-aarch64-linux.tar.gz"
+      sha256 "6ccdc6017e59b63dc23924d8a1da8bf032d25a235a3586487183942aa7e17e13"
     end
     on_intel do
-      url "https://github.com/woss/opencode-visualizer/releases/download/v1.2.0/ocv-x86_64-linux.tar.gz"
-      sha256 "871553e2a95b029f6fd8ac5b02a281d3a6786377de733d258276efaf3a99e859"
+      url "https://github.com/woss/opencode-visualizer/releases/download/v1.3.7/ocv-x86_64-linux.tar.gz"
+      sha256 "87d2d3362193416a1d413ba0a1db397de192c17a532af5c87d10970bcda6835c"
     end
   end
 
